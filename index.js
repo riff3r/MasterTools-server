@@ -128,7 +128,8 @@ async function run() {
     const productCollection = client.db("mastertools").collection("products");
     const userCollection = client.db("mastertools").collection("users");
     const orderCollection = client.db("mastertools").collection("orders");
-    // const doctorCollection = client.db("mastertools").collection("doctors");
+    const reviewCollection = client.db("mastertools").collection("reviews");
+
     // const paymentCollection = client.db("mastertools").collection("payments");
 
     const verifyAdmin = async (req, res, next) => {
@@ -160,6 +161,11 @@ async function run() {
 
       // console.log(result);
       // const result = await productCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/review", async (req, res) => {
+      const result = await reviewCollection.find().toArray();
       res.send(result);
     });
 
@@ -201,6 +207,13 @@ async function run() {
       const doc = req.body;
       console.log(doc);
       const result = await orderCollection.insertOne(doc);
+      res.send(result);
+    });
+
+    app.post("/review", async (req, res) => {
+      const doc = req.body;
+      // console.log(doc);
+      const result = await reviewCollection.insertOne(doc);
       res.send(result);
     });
 
