@@ -237,6 +237,13 @@ async function run() {
       });
     });
 
+    // Patch API
+
+    // app.patch("/user/:email", async (req, res) => {
+    //   const { email } = req.params;
+
+    // });
+
     //  Put API
 
     app.put("/user/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
