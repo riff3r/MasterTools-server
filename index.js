@@ -45,8 +45,6 @@ function verifyJWT(req, res, next) {
     req.decoded = decoded;
     next();
   });
-
-  // next();
 }
 
 // Email
@@ -130,7 +128,7 @@ async function run() {
     const orderCollection = client.db("mastertools").collection("orders");
     const reviewCollection = client.db("mastertools").collection("reviews");
 
-    // const paymentCollection = client.db("mastertools").collection("payments");
+    const paymentCollection = client.db("mastertools").collection("payments");
 
     const verifyAdmin = async (req, res, next) => {
       const requester = req.decoded.email;
@@ -169,13 +167,29 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/order", verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await orderCollection.find().toArray();
+      res.send(result);
+    });
+
     app.get("/order/:email", async (req, res) => {
       const { email } = req.params;
 
-      console.log(email);
+      // console.log(email);
       const query = { userEmail: email };
 
       const result = await orderCollection.find(query).toArray();
+
+      res.send(result);
+    });
+
+    app.get("/orders/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: ObjectId(id) };
+
+      const result = await orderCollection.findOne(query);
+
+      console.log(id);
 
       res.send(result);
     });
@@ -215,7 +229,7 @@ async function run() {
 
     app.post("/order", async (req, res) => {
       const doc = req.body;
-      console.log(doc);
+      // console.log(doc);
       const result = await orderCollection.insertOne(doc);
       res.send(result);
     });
@@ -229,10 +243,10 @@ async function run() {
 
     // Payment API
 
-    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
-      const service = req.body;
+    app.post("/create-payment-intent", async (req, res) => {
+      const order = req.body;
       // console.log(service);
-      const price = service.price;
+      const price = order.totalPrice;
       const amount = price * 100;
 
       // Create a PaymentIntent with the order amount and currency
@@ -249,10 +263,60 @@ async function run() {
 
     // Patch API
 
-    // app.patch("/user/:email", async (req, res) => {
-    //   const { email } = req.params;
+    app.patch("/order/:id", verifyJWT, async (req, res) => {
+      const { id } = req.params;
+      const payment = req.body;
 
-    // });
+      const filter = { _id: ObjectId(id) };
+
+      const updateDoc = {
+        $set: {
+          paid: true,
+          transactionId: payment.transactionId,
+        },
+      };
+
+      const result = await paymentCollection.insertOne(payment);
+
+      const updatedOrder = await orderCollection.updateOne(filter, updateDoc);
+
+      res.send(updatedOrder);
+    });
+
+    app.patch("/status/:id", verifyJWT, async (req, res) => {
+      const { id } = req.params;
+      const { quantity, productId } = req.body;
+      console.log(quantity, productId);
+
+      const filter = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "shipped",
+        },
+      };
+
+      const updatedOrder = await orderCollection.updateOne(filter, updateDoc);
+
+      const availableQuery = { _id: ObjectId(productId) };
+
+      const productInfo = await productCollection.findOne(availableQuery);
+
+      console.log(productInfo);
+
+      const productFilter = { _id: ObjectId(productId) };
+      const productDoc = {
+        $set: {
+          quantity: productInfo.quantity - quantity,
+        },
+      };
+
+      const updateQuantity = await productCollection.updateOne(
+        productFilter,
+        productDoc
+      );
+
+      res.send(updatedOrder);
+    });
 
     //  Put API
 
@@ -293,7 +357,7 @@ async function run() {
       const { id } = req.params;
       const query = { _id: ObjectId(id) };
       const deleteOrder = await orderCollection.deleteOne(query);
-      console.log(deleteOrder);
+      // console.log(deleteOrder);
       res.send(deleteOrder);
     });
 
