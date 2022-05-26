@@ -185,6 +185,16 @@ async function run() {
       res.send(cursor);
     });
 
+    app.get("/user/:email", async (req, res) => {
+      const { email } = req.params;
+      const query = {
+        email,
+      };
+
+      const cursor = await userCollection.findOne(query);
+      res.send(cursor);
+    });
+
     app.get("/admin/:email", async (req, res) => {
       const email = req.params.email;
 
@@ -246,7 +256,7 @@ async function run() {
 
     //  Put API
 
-    app.put("/user/admin/:email", verifyJWT, verifyAdmin, async (req, res) => {
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
 
       const filter = { email };
@@ -285,6 +295,13 @@ async function run() {
       const deleteOrder = await orderCollection.deleteOne(query);
       console.log(deleteOrder);
       res.send(deleteOrder);
+    });
+
+    app.delete("/product/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: ObjectId(id) };
+      const deleteProduct = await productCollection.deleteOne(query);
+      res.send(deleteProduct);
     });
   } finally {
   }
